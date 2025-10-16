@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 90vh; width: 100%; }
+        .control-panel {
+            position: absolute;
+            top: 10px; left: 10px; z-index: 1000;
+            background: white; padding: 8px 12px; border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            min-width: 220px;
+            cursor: move;
+            transition: box-shadow 0.2s;
+        }
+        .control-panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: move; font-weight: bold;
+        }
+        .hide-panel-btn {
+            background: none; border: none; font-size: 18px; cursor: pointer; color: #888;
+        }
+        .direction-group label { font-weight: normal; margin-right: 8px; }
+        .show-panel-btn {
+            position: absolute; top: 10px; left: 10px; z-index: 1001;
+            background: #ffc107; border: none; border-radius: 8px; padding: 6px 14px;
+            font-weight: bold; color: #333; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            display: none;
+        }
+        .sub-options { display: none; margin-left: 10px; }
+        .main-option { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <button id="showPanelBtn" class="show-panel-btn">Hiện panel</button>
+    <div class="control-panel" id="controlPanel">
+        <div class="control-panel-header">
+            <span>Quản lý cấm</span>
+            <button class="hide-panel-btn" id="hidePanelBtn" title="Ẩn panel">&times;</button>
+        </div>
+        <!-- Cấm đường -->
+        <div class="main-option">
+            <button id="toggleBanEdge" class="btn btn-warning btn-block btn-sm">Cấm đường</button>
+            <div id="banEdgeOptions" class="sub-options">
+                <label><input type="radio" name="direction" value="both" checked> 2 chiều</label>
+                <label><input type="radio" name="direction" value="one-way"> 1 chiều (đầu→cuối)</label>
+                <button id="banEdgeBtn" class="btn btn-primary btn-sm my-1">Bật chế độ cấm đường</button>
+                <button id="restoreBanBtn" class="btn btn-success btn-sm my-1">Khôi phục đoạn vừa cấm</button>
+            </div>
+        </div>
+        <!-- Cấm vùng -->
+        <div class="main-option">
+            <button id="toggleBanArea" class="btn btn-warning btn-block btn-sm">Cấm vùng</button>
+            <div id="banAreaOptions" class="sub-options">
+                <button id="banAreaBtn" class="btn btn-primary btn-sm my-1">Bật chế độ cấm vùng</button>
+                <button id="sendAreaBtn" class="btn btn-info btn-sm my-1">Gửi vùng cấm</button>
+                <button id="restoreBanAreaBtn" class="btn btn-success btn-sm my-1">Khôi phục vùng vừa cấm</button>
+            </div>
+        </div>
+        <!-- Tắc đường -->
+        <div class="main-option">
+            <button id="toggleTacEdge" class="btn btn-warning btn-block btn-sm">Tắc đường</button>
+            <div id="tacEdgeOptions" class="sub-options">
+                <label>Hệ số tắc: <input type="number" id="tacFactor" value="5" min="2" max="20" style="width:50px"></label>
+                <button id="tacEdgeBtn" class="btn btn-primary btn-sm my-1">Bật chế độ tắc đường</button>
+                <button id="restoreTacBtn" class="btn btn-success btn-sm my-1">Khôi phục đoạn tắc vừa đánh dấu</button>
+            </div>
+        </div>
+        <!-- Ngập đường -->
+        <div class="main-option">
+            <button id="toggleFloodEdge" class="btn btn-warning btn-block btn-sm">Ngập đường</button>
+            <div id="floodEdgeOptions" class="sub-options">
+                <label>Mực nước (m): <input type="number" id="floodLevel" value="0.3" min="0" step="0.01" style="width:60px"></label>
+                <button id="floodAreaBtn" class="btn btn-primary btn-sm my-1">Bật chế độ chọn vùng ngập</button>
+                <button id="sendFloodBtn" class="btn btn-info btn-sm my-1">Gửi vùng ngập</button>
+                <button id="restoreFloodBtn" class="btn btn-success btn-block btn-sm">Khôi phục vùng ngập</button>
+            </div>
+        </div>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-danger btn-block btn-sm">Đăng xuất</a>
+        <div id="banEdgeStatus" class="mt-2 text-info" style="font-size: 90%"></div>
+    </div>
+    <div id="map"></div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Ẩn/hiện panel
+        document.getElementById('hidePanelBtn').onclick = function() {
+            document.getElementById('controlPanel').style.display = 'none';
+            document.getElementById('showPanelBtn').style.display = 'block';
+        };
+        document.getElementById('showPanelBtn').onclick = function() {
+            document.getElementById('controlPanel').style.display = 'block';
+            document.getElementById('showPanelBtn').style.display = 'none';
+        };
+
+        // Kéo thả panel
+        (function() {
+            var panel = document.getElementById('controlPanel');
+            var header = panel.querySelector('.control-panel-header');
+            var isDragging = false, offsetX = 0, offsetY = 0;
+            header.onmousedown = function(e) {
+                isDragging = true;
+                offsetX = e.clientX - panel.offsetLeft;
+                offsetY = e.clientY - panel.offsetTop;
+                document.body.style.userSelect = 'none';
+            };
+            document.onmousemove = function(e) {
+                if (isDragging) {
+                    panel.style.left = (e.clientX - offsetX) + 'px';
+                    panel.style.top = (e.clientY - offsetY) + 'px';
+                }
+            };
+            document.onmouseup = function() {
+                isDragging = false;
+                document.body.style.userSelect = '';
+            };
+        })();
+
+        var map = L.map('map').setView([21.033, 105.825], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var nodes = {{ node_coords|tojson }};
+        var paths = {{ path_coords|tojson }};
+
+        var nodeMarkers = L.layerGroup();
+        var pathMarkers = L.layerGroup();
+
+        nodes.forEach(function(coord) {
+            L.circleMarker(coord, {radius: 5, color: 'blue', fillColor: 'blue', fillOpacity: 0.8}).addTo(nodeMarkers);
+        });
+        paths.forEach(function(path) {
+            L.polyline(path, {color: 'green', weight: 3}).addTo(pathMarkers);
+        });
+        nodeMarkers.addTo(map);
+        pathMarkers.addTo(map);
+
+        // Cấm đường
+        var banMode = false;
+        var selectedEdge = [];
+        var edgeLine;
+
+        document.getElementById('banEdgeBtn').onclick = function() {
+            banMode = !banMode;
+            this.textContent = banMode ? "Tắt chế độ cấm đường" : "Bật chế độ cấm đường";
+            document.getElementById('banEdgeStatus').textContent = banMode ? "Chọn 2 điểm trên bản đồ để cấm đường." : "";
+            selectedEdge = [];
+            if (edgeLine) { map.removeLayer(edgeLine); edgeLine = null; }
+        };
+
+        map.on('click', function(e) {
+            // Cấm đường
+            if (banMode) {
+                if (selectedEdge.length >= 2) {
+                    selectedEdge = [];
+                    if (edgeLine) { map.removeLayer(edgeLine); edgeLine = null; }
+                }
+                selectedEdge.push([e.latlng.lat, e.latlng.lng]);
+                if (selectedEdge.length == 2) {
+                    edgeLine = L.polyline(selectedEdge, { color: 'orange', weight: 3 }).addTo(map);
+                    var direction = document.querySelector('input[name="direction"]:checked').value;
+                    $.ajax({
+                        url: "/ban_edge",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            node1: selectedEdge[0],
+                            node2: selectedEdge[1],
+                            direction: direction
+                        }),
+                        success: function(response) {
+                            alert(response.message);
+                            L.polyline(selectedEdge, { color: 'red', weight: 3 }).addTo(map);
+                            banMode = false;
+                            document.getElementById('banEdgeBtn').textContent = "Bật chế độ cấm đường";
+                            document.getElementById('banEdgeStatus').textContent = "";
+                        },
+                        error: function(error) {
+                            alert("Lỗi: " + error.responseJSON.error);
+                            banMode = false;
+                            document.getElementById('banEdgeBtn').textContent = "Bật chế độ cấm đường";
+                            document.getElementById('banEdgeStatus').textContent = "";
+                        }
+                    });
+                }
+                return;
+            }
+
+            // Cấm vùng
+            if (banAreaMode) {
+                areaPoints.push([e.latlng.lat, e.latlng.lng]);
+                if (areaPolygon) { map.removeLayer(areaPolygon); }
+                areaPolygon = L.polygon(areaPoints, {color: 'orange'}).addTo(map);
+                return;
+            }
+
+            // Tắc đường
+            if (tacMode) {
+                if (tacEdge.length >= 2) {
+                    tacEdge = [];
+                    if (tacLine) { map.removeLayer(tacLine); tacLine = null; }
+                }
+                tacEdge.push([e.latlng.lat, e.latlng.lng]);
+                if (tacEdge.length == 2) {
+                    tacLine = L.polyline(tacEdge, { color: 'black', weight: 3, dashArray: '5, 5' }).addTo(map);
+                    var factor = parseInt(document.getElementById('tacFactor').value) || 5;
+                    fetch('/tac_edge', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({node1: tacEdge[0], node2: tacEdge[1], factor: factor})
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert(data.message || data.error);
+                        tacMode = false;
+                        document.getElementById('tacEdgeBtn').textContent = "Bật chế độ tắc đường";
+                        document.getElementById('banEdgeStatus').textContent = "";
+                    });
+                }
+                return;
+            }
+
+            // Ngập đường
+            if (floodMode) {
+                floodPoints.push([e.latlng.lat, e.latlng.lng]);
+                if (floodPolygon) { map.removeLayer(floodPolygon); }
+                floodPolygon = L.polygon(floodPoints, {color: 'blue', fillOpacity: 0.3}).addTo(map);
+                return;
+            }
+        });
+
+        document.getElementById('restoreBanBtn').onclick = function() {
+            $.ajax({
+                url: "/restore_last_ban",
+                type: "POST",
+                success: function(response) {
+                    alert(response.message);
+                    location.reload(); // Reload để cập nhật lại bản đồ
+                },
+                error: function(error) {
+                    alert("Lỗi: " + error.responseJSON.error);
+                }
+            });
+        };
+
+        var banAreaMode = false;
+        var areaPoints = [];
+        var areaPolygon;
+
+        document.getElementById('banAreaBtn').onclick = function() {
+            banAreaMode = !banAreaMode;
+            this.textContent = banAreaMode ? "Tắt chế độ cấm vùng" : "Bật chế độ cấm vùng";
+            areaPoints = [];
+            if (areaPolygon) { map.removeLayer(areaPolygon); areaPolygon = null; }
+            document.getElementById('banEdgeStatus').textContent = banAreaMode ? "Chọn nhiều điểm trên bản đồ, sau đó nhấn 'Gửi vùng cấm'." : "";
+        };
+
+        document.getElementById('sendAreaBtn').onclick = function() {
+            if (!banAreaMode) {
+                alert("Bạn cần bật chế độ cấm vùng trước!");
+                return;
+            }
+            if (areaPoints.length < 3) {
+                alert("Cần ít nhất 3 điểm để tạo vùng!");
+                return;
+            }
+            fetch('/ban_area', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({polygon: areaPoints})
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || data.error);
+                banAreaMode = false;
+                document.getElementById('banAreaBtn').textContent = "Bật chế độ cấm vùng";
+                document.getElementById('banEdgeStatus').textContent = "";
+                areaPoints = [];
+                if (areaPolygon) { map.removeLayer(areaPolygon); areaPolygon = null; }
+                location.reload();
+            });
+        };
+
+        document.getElementById('restoreBanAreaBtn').onclick = function() {
+            fetch('/restore_last_ban_area', {method: 'POST'})
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || data.error);
+                location.reload();
+            });
+        };
+
+        document.getElementById('toggleBanEdge').onclick = function() {
+            let opt = document.getElementById('banEdgeOptions');
+            opt.style.display = (opt.style.display === 'block') ? 'none' : 'block';
+            document.getElementById('banAreaOptions').style.display = 'none';
+        };
+        document.getElementById('toggleBanArea').onclick = function() {
+            let opt = document.getElementById('banAreaOptions');
+            opt.style.display = (opt.style.display === 'block') ? 'none' : 'block';
+            document.getElementById('banEdgeOptions').style.display = 'none';
+        };
+
+        // Tắc đường
+        var tacMode = false;
+        var tacEdge = [];
+        var tacLine;
+
+        document.getElementById('tacEdgeBtn').onclick = function() {
+            tacMode = !tacMode;
+            this.textContent = tacMode ? "Tắt chế độ tắc đường" : "Bật chế độ tắc đường";
+            tacEdge = [];
+            if (tacLine) { map.removeLayer(tacLine); tacLine = null; }
+            document.getElementById('banEdgeStatus').textContent = tacMode ? "Chọn 2 điểm trên bản đồ để đánh dấu tắc đường." : "";
+        };
+
+        document.getElementById('restoreTacBtn').onclick = function() {
+            fetch('/restore_last_tac', {method: 'POST'})
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || data.error);
+                location.reload();
+            });
+        };
+
+        document.getElementById('toggleTacEdge').onclick = function() {
+            let opt = document.getElementById('tacEdgeOptions');
+            opt.style.display = (opt.style.display === 'block') ? 'none' : 'block';
+            // Ẩn các lựa chọn con khác nếu cần
+            if (document.getElementById('banEdgeOptions')) document.getElementById('banEdgeOptions').style.display = 'none';
+            if (document.getElementById('banAreaOptions')) document.getElementById('banAreaOptions').style.display = 'none';
+        };
+
+        // Ngập đường
+        var floodMode = false;
+        var floodPoints = [];
+        var floodPolygon;
+
+        document.getElementById('floodAreaBtn').onclick = function() {
+            floodMode = !floodMode;
+            this.textContent = floodMode ? "Tắt chọn vùng ngập" : "Bật chế độ chọn vùng ngập";
+            floodPoints = [];
+            if (floodPolygon) { map.removeLayer(floodPolygon); floodPolygon = null; }
+            document.getElementById('banEdgeStatus').textContent = floodMode ? "Chọn nhiều điểm trên bản đồ, sau đó nhấn 'Gửi vùng ngập'." : "";
+        };
+
+        document.getElementById('sendFloodBtn').onclick = function() {
+            if (!floodMode) {
+                alert("Bạn cần bật chế độ chọn vùng ngập trước!");
+                return;
+            }
+            if (floodPoints.length < 3) {
+                alert("Cần ít nhất 3 điểm để tạo vùng!");
+                return;
+            }
+            var waterLevel = parseFloat(document.getElementById('floodLevel').value) || 0.3;
+            fetch('/flood_road', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({water_level: waterLevel, flooded_area: floodPoints})
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || data.error);
+                floodMode = false;
+                document.getElementById('floodAreaBtn').textContent = "Bật chế độ chọn vùng ngập";
+                document.getElementById('banEdgeStatus').textContent = "";
+                floodPoints = [];
+                if (floodPolygon) { map.removeLayer(floodPolygon); floodPolygon = null; }
+                location.reload();
+            });
+        };
+        document.getElementById('restoreFloodBtn').onclick = function() {
+            fetch('/restore_last_flood', {method: 'POST'})
+            .then(res => res.json())
+            .then(data => alert(data.message || data.error));
+        };
+
+        document.getElementById('toggleFloodEdge').onclick = function() {
+            let opt = document.getElementById('floodEdgeOptions');
+            opt.style.display = (opt.style.display === 'block') ? 'none' : 'block';
+            if (document.getElementById('banEdgeOptions')) document.getElementById('banEdgeOptions').style.display = 'none';
+            if (document.getElementById('banAreaOptions')) document.getElementById('banAreaOptions').style.display = 'none';
+            if (document.getElementById('tacEdgeOptions')) document.getElementById('tacEdgeOptions').style.display = 'none';
+        };
+    </script>
+</body>
+</html>

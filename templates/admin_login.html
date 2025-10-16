@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        /* AI-themed background shapes */
+        .ai-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .ai-circuit {
+            position: absolute;
+            opacity: 0.13;
+            width: 600px;
+            height: 600px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: url('https://cdn.pixabay.com/photo/2017/01/31/13/14/artificial-intelligence-2025789_1280.png') center/contain no-repeat;
+            filter: blur(1px) grayscale(0.2);
+        }
+        .ai-dots {
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 320px; height: 320px;
+            opacity: 0.10;
+            background: url('https://cdn.pixabay.com/photo/2017/01/31/13/14/artificial-intelligence-2025790_1280.png') center/contain no-repeat;
+        }
+        .login-container {
+            margin-top: 70px;
+            max-width: 400px;
+            background: rgba(255,255,255,0.98);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+            padding: 36px 32px 28px 32px;
+            z-index: 2;
+            position: relative;
+        }
+        .login-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #2d3a4b;
+        }
+        .btn-primary {
+            background: #4f8cff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .alert-danger {
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .ai-icon {
+            position: absolute;
+            z-index: 1;
+            opacity: 0.18;
+            pointer-events: none;
+        }
+        @keyframes float {
+            0% { transform: translateY(0);}
+            50% { transform: translateY(-18px);}
+            100% { transform: translateY(0);}
+        }
+        .ai-pulse {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #4f8cff;
+            opacity: 0.13;
+            box-shadow: 0 0 18px 8px #4f8cff;
+            animation: pulse 2.8s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.18;}
+            50% { transform: scale(1.3); opacity: 0.10;}
+            100% { transform: scale(0.8); opacity: 0.18;}
+        }
+    </style>
+</head>
+<body>
+    <div class="ai-bg">
+        <div class="ai-circuit"></div>
+        <div class="ai-dots"></div>
+        <!-- Nhiều icon AI nhỏ rải rác hơn -->
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712037.png" class="ai-icon" style="top:8%;left:10%;width:38px;animation: float 6s ease-in-out infinite;">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712038.png" class="ai-icon" style="top:75%;left:18%;width:32px;animation: float 7s ease-in-out infinite reverse;">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712040.png" class="ai-icon" style="top:20%;left:80%;width:34px;animation: float 5s ease-in-out infinite;">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712039.png" class="ai-icon" style="top:60%;left:85%;width:36px;animation: float 8s ease-in-out infinite reverse;">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712041.png" class="ai-icon" style="top:40%;left:60%;width:30px;animation: float 9s ease-in-out infinite;">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712042.png" class="ai-icon" style="top:55%;left:25%;width:28px;animation: float 10s ease-in-out infinite reverse;">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712043.png" class="ai-icon" style="top:15%;left:55%;width:32px;animation: float 8s ease-in-out infinite;">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712044.png" class="ai-icon" style="top:80%;left:75%;width:30px;animation: float 7s ease-in-out infinite reverse;">
+        <!-- Nhiều hiệu ứng chấm động hơn -->
+        <div class="ai-pulse" style="top:30%;left:30%;animation-delay:0s;"></div>
+        <div class="ai-pulse" style="top:70%;left:70%;animation-delay:1s;"></div>
+        <div class="ai-pulse" style="top:20%;left:60%;animation-delay:0.5s;"></div>
+        <div class="ai-pulse" style="top:60%;left:20%;animation-delay:1.5s;"></div>
+        <div class="ai-pulse" style="top:50%;left:80%;animation-delay:0.8s;"></div>
+        <!-- SVG mạng neural động -->
+        <svg width="100vw" height="100vh" style="position:absolute;top:0;left:0;z-index:0;pointer-events:none;" viewBox="0 0 1920 1080">
+            <circle cx="400" cy="200" r="7" fill="#4f8cff" opacity="0.18">
+                <animate attributeName="r" values="7;13;7" dur="3s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="1500" cy="300" r="6" fill="#2563eb" opacity="0.13">
+                <animate attributeName="r" values="6;12;6" dur="2.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="900" cy="800" r="8" fill="#4f8cff" opacity="0.13">
+                <animate attributeName="r" values="8;14;8" dur="2.8s" repeatCount="indefinite"/>
+            </circle>
+            <line x1="400" y1="200" x2="900" y2="800" stroke="#2563eb" stroke-width="2" opacity="0.10">
+                <animate attributeName="opacity" values="0.10;0.22;0.10" dur="2.8s" repeatCount="indefinite"/>
+            </line>
+            <line x1="900" y1="800" x2="1500" y2="300" stroke="#4f8cff" stroke-width="2" opacity="0.10">
+                <animate attributeName="opacity" values="0.10;0.22;0.10" dur="2.5s" repeatCount="indefinite"/>
+            </line>
+            <line x1="400" y1="200" x2="1500" y2="300" stroke="#2563eb" stroke-width="2" opacity="0.10">
+                <animate attributeName="opacity" values="0.10;0.22;0.10" dur="3s" repeatCount="indefinite"/>
+            </line>
+        </svg>
+    </div>
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh; position: relative; z-index: 2;">
+        <div class="login-container shadow">
+            <div class="login-title">
+                <span style="vertical-align: middle;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712037.png" alt="AI" style="width:36px;height:36px;margin-right:8px;vertical-align:middle;">
+                    Welcome Admin
+                </span>
+            </div>
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            <form method="post">
+                <div class="form-group">
+                    <label class="form-label">Tài khoản</label>
+                    <input type="text" name="username" class="form-control" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button class="btn btn-primary btn-block mt-3">Đăng nhập</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

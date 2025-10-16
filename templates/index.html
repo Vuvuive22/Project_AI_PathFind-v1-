@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        .control-panel {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            padding: 22px 22px 18px 22px;
+            border-radius: 22px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.13);
+            min-width: 270px;
+            max-width: 340px;
+            border: 1px solid #b6d0f7;
+            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+            animation: fadeInPanel 0.7s;
+            transition: box-shadow 0.3s, background 0.3s;
+        }
+        @keyframes fadeInPanel {
+            from { opacity: 0; transform: translateY(-20px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        .control-panel h5 {
+            margin-bottom: 18px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2563eb;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .control-panel label {
+            font-weight: 500;
+            color: #2563eb;
+            margin-bottom: 6px;
+        }
+        .form-control, select {
+            border-radius: 8px;
+            border: 1px solid #b6d0f7;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+        .btn {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.07);
+        }
+        .btn-primary {
+            background: #4f8cff;
+            border: none;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: #e0eafc;
+            color: #2563eb;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background: #cfdef3;
+            color: #1e40af;
+        }
+        #distance-time-result {
+            margin-top: 14px;
+            font-size: 1rem;
+            color: #2d3a4b;
+            background: #f4f8fb;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(31, 38, 135, 0.06);
+            min-height: 40px;
+        }
+    </style>
+    <title>Interactive Map</title>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h5>Map Controls</h5>
+        <label for="algorithmSelect">Thuật toán:</label>
+        <select id="algorithmSelect" class="form-control mb-3">
+            <option value="Dijkstra">Dijkstra</option>
+            <option value="A Star">A Star</option>
+            <option value="UCS">UCS</option>
+            <option value="Greedy BFS">Greedy BFS</option>
+        </select>
+        <button id="toggleNodes" class="btn btn-primary btn-block">Toggle Nodes</button>
+        <button id="togglePaths" class="btn btn-secondary btn-block">Toggle Paths</button>
+        <div id="distance-time-result" style="margin-top:10px; font-size:14px; color:#333;"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var map = L.map('map').setView([21.033, 105.825], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Safely pass the Python `node_coords` data to JavaScript
+        var nodes = JSON.parse('{{ node_coords|tojson|safe }}');
+        var paths = JSON.parse('{{ path_coords|tojson|safe }}');
+
+        // Create a layer group for the markers
+        var nodeMarkers = L.layerGroup();
+        var pathMarkers = L.layerGroup();
+
+        // Add all node markers to the layer group
+        nodes.forEach(function(coord) {
+            var marker = L.circleMarker(coord, {
+                radius: 5,
+                color: 'blue',
+                fillColor: 'blue',
+                fillOpacity: 0.8
+            });
+            marker.addTo(nodeMarkers);
+        });
+
+        // Add all paths to the layer group
+        paths.forEach(function(path) {
+            var polyline = L.polyline(path, { color: 'green', weight: 3 });
+            polyline.addTo(pathMarkers);
+        });
+
+        // Add toggle functionality for nodes
+        document.getElementById('toggleNodes').addEventListener('click', function() {
+            if (map.hasLayer(nodeMarkers)) {
+                map.removeLayer(nodeMarkers);
+            } else {
+                map.addLayer(nodeMarkers);
+            }
+        });
+
+        // Add toggle functionality for paths
+        document.getElementById('togglePaths').addEventListener('click', function() {
+            if (map.hasLayer(pathMarkers)) {
+                map.removeLayer(pathMarkers);
+            } else {
+                map.addLayer(pathMarkers);
+            }
+        });
+
+        var click_coords = [];
+        var start_marker, end_marker, polyline;
+        var startIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Hình ảnh điểm bắt đầu
+            iconSize: [30, 40],
+            iconAnchor: [15, 40],
+            popupAnchor: [0, -40]
+        });
+        var endIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Hình ảnh điểm kết thúc
+            iconSize: [30, 40],
+            iconAnchor: [15, 40],
+            popupAnchor: [0, -40]
+        });
+
+        map.on('click', function(e) {
+            if (click_coords.length >= 2) {
+                click_coords = [];
+                if (start_marker) map.removeLayer(start_marker);
+                if (end_marker) map.removeLayer(end_marker);
+                if (polyline) map.removeLayer(polyline);
+            }
+
+            var lat = e.latlng.lat;
+            var lng = e.latlng.lng;
+
+            click_coords.push([lat, lng]);
+
+            if (click_coords.length == 1) {
+                start_marker = L.marker([lat, lng], { icon: startIcon }).addTo(map).bindPopup("Start Point").openPopup();
+            } else if (click_coords.length == 2) {
+                end_marker = L.marker([lat, lng], { icon: endIcon }).addTo(map).bindPopup("End Point").openPopup();
+
+                // Get the selected algorithm from the dropdown list
+                var algorithm = document.getElementById('algorithmSelect').value;
+
+                // Send coordinates and algorithm to the server to calculate the path
+                $.ajax({
+                    url: "/find_shortest_path",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        start: click_coords[0],
+                        end: click_coords[1],
+                        algorithm: algorithm,
+                        max_depth: 0
+                    }),
+                    success: function(response) {
+                        // Draw the path on the map
+                        var latlngs = response.path_coords;
+                        polyline = L.polyline(latlngs, { color: 'red', weight: 4 }).addTo(map);
+                        map.fitBounds(polyline.getBounds());
+                    },
+                    error: function(error) {
+                        console.error(error);
+                        alert("Error: " + error.responseJSON.error);
+                    }
+                });
+
+                // Gửi request tính khoảng cách & thời gian
+                $.ajax({
+                    url: "/estimate_distance_time",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        start: click_coords[0],
+                        end: click_coords[1],
+                        speed: 1.39 // m/s, bạn có thể cho người dùng nhập nếu muốn
+                    }),
+                    success: function(response) {
+                        var distance = response.distance_m.toFixed(1);
+                        var time = response.estimated_time_s ? (response.estimated_time_s/60).toFixed(1) : "N/A";
+                        $('#distance-time-result').html(
+                            "<b>Khoảng cách ước tính:</b> " + distance + " m<br>" +
+                            "<b>Thời gian dự kiến:</b> " + time + " phút"
+                        );
+                    },
+                    error: function(error) {
+                        $('#distance-time-result').html("Không thể tính khoảng cách/thời gian.");
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
