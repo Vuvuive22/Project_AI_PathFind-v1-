@@ -4,17 +4,32 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
     <style>
+        :root {
+            /* Define new color palette for consistency */
+            --primary-color: #007bff; /* Electric Blue */
+            --secondary-color: #6c757d; /* Soft Gray */
+            --background-light: #f8f9fa; /* Very Light Gray */
+            --panel-bg: rgba(255, 255, 255, 0.85); /* Semi-transparent White */
+            --text-color-dark: #212529;
+            --border-color: rgba(0, 123, 255, 0.2);
+            --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
         html, body {
             height: 100%;
             margin: 0;
+            font-family: 'Roboto', sans-serif; /* Apply new font */
+            background-color: var(--background-light);
         }
         #map {
             height: 100%;
@@ -25,171 +40,243 @@
             top: 30px;
             left: 30px;
             z-index: 1000;
-            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
-            padding: 22px 22px 18px 22px;
-            border-radius: 22px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.13);
-            min-width: 270px;
-            max-width: 340px;
-            border: 1px solid #b6d0f7;
-            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+            /* Glassmorphism/Modern Look */
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px); /* Key for glassmorphism */
+            -webkit-backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 18px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+            min-width: 280px;
+            max-width: 350px;
             animation: fadeInPanel 0.7s;
-            transition: box-shadow 0.3s, background 0.3s;
+            transition: box-shadow 0.3s;
         }
         @keyframes fadeInPanel {
             from { opacity: 0; transform: translateY(-20px);}
             to { opacity: 1; transform: translateY(0);}
         }
+
+        /* --- Panel Content Styles --- */
         .control-panel h5 {
-            margin-bottom: 18px;
-            font-size: 1.25rem;
+            margin-bottom: 20px;
+            font-size: 1.35rem;
             font-weight: 700;
-            color: #2563eb;
-            letter-spacing: 1px;
+            color: var(--primary-color);
             text-align: center;
         }
         .control-panel label {
             font-weight: 500;
-            color: #2563eb;
-            margin-bottom: 6px;
+            color: var(--text-color-dark);
+            margin-bottom: 5px;
+            display: block;
         }
+
+        /* Form Controls */
         .form-control, select {
-            border-radius: 8px;
-            border: 1px solid #b6d0f7;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
             font-size: 1rem;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
+        .form-control:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        /* Buttons */
         .btn {
             margin-bottom: 10px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             border-radius: 10px;
-            font-weight: 600;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.07);
+            font-weight: 500;
+            padding: 10px 15px;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-group-toggle .btn {
+            margin-bottom: 0;
         }
         .btn-primary {
-            background: #4f8cff;
+            background: var(--primary-color);
             border: none;
             color: #fff;
         }
         .btn-primary:hover {
-            background: #2563eb;
-            color: #fff;
+            background: #0056b3; /* Darker blue on hover */
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+            transform: translateY(-1px);
         }
-        .btn-secondary {
-            background: #e0eafc;
-            color: #2563eb;
-            border: none;
+        
+        /* Secondary/Toggle Buttons for a cleaner look */
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            background: transparent;
         }
-        .btn-secondary:hover {
-            background: #cfdef3;
-            color: #1e40af;
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
         }
+
+        /* Active Toggle State */
+        .btn-outline-primary.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.4);
+        }
+        
+        /* Result Panel */
         #distance-time-result {
-            margin-top: 14px;
-            font-size: 1rem;
-            color: #2d3a4b;
-            background: #f4f8fb;
-            border-radius: 10px;
-            padding: 10px;
-            box-shadow: 0 2px 8px rgba(31, 38, 135, 0.06);
-            min-height: 40px;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--background-light); /* Lighter background for results */
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            color: var(--text-color-dark);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            min-height: 50px;
+            font-weight: 400;
         }
+        #distance-time-result b {
+            font-weight: 700;
+            color: #343a40;
+        }
+
     </style>
-    <title>Interactive Map</title>
+    <title>Minimalist Navigator Map</title>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <!-- Control Panel -->
     <div class="control-panel">
-        <h5>Map Controls</h5>
-        <label for="algorithmSelect">Thuật toán:</label>
-        <select id="algorithmSelect" class="form-control mb-3">
-            <option value="Dijkstra">Dijkstra</option>
-            <option value="A Star">A Star</option>
-            <option value="UCS">UCS</option>
-            <option value="Greedy BFS">Greedy BFS</option>
-        </select>
-        <button id="toggleNodes" class="btn btn-primary btn-block">Toggle Nodes</button>
-        <button id="togglePaths" class="btn btn-secondary btn-block">Toggle Paths</button>
-        <div id="distance-time-result" style="margin-top:10px; font-size:14px; color:#333;"></div>
+        <h5>🌍 Minimalist Navigator</h5>
+
+        <div class="form-group">
+            <label for="algorithmSelect">Chọn Thuật toán Tìm kiếm:</label>
+            <select id="algorithmSelect" class="form-control">
+                <option value="Dijkstra">Dijkstra (BFS)</option>
+                <option value="A Star">A Star</option>
+                <option value="UCS">Uniform Cost Search</option>
+                <option value="Greedy BFS">Greedy Best-First Search</option>
+            </select>
+        </div>
+
+        <div class="btn-group btn-group-toggle w-100" data-toggle="buttons" role="group">
+            <button id="toggleNodes" class="btn btn-outline-primary w-50 active">Hiện Nodes</button>
+            <button id="togglePaths" class="btn btn-outline-primary w-50 active">Hiện Paths</button>
+        </div>
+        
+        <small class="form-text text-muted mb-3 mt-1 text-center">
+            Click vào bản đồ 2 lần để chọn điểm Bắt đầu và Kết thúc.
+        </small>
+        
+        <hr class="my-3" style="border-top: 1px solid rgba(0, 123, 255, 0.1);">
+
+        <div id="distance-time-result">
+            Chờ người dùng chọn điểm...
+        </div>
     </div>
 
-    <!-- Leaflet JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Khởi tạo bản đồ
         var map = L.map('map').setView([21.033, 105.825], 15);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Safely pass the Python `node_coords` data to JavaScript
-        var nodes = JSON.parse('{{ node_coords|tojson|safe }}');
-        var paths = JSON.parse('{{ path_coords|tojson|safe }}');
+        // Safely pass the Python data (assuming you are using a Python backend like Flask)
+        // **Chú ý:** Các biến này (node_coords, path_coords) cần được render từ backend của bạn
+        var nodes = JSON.parse('{{ node_coords|tojson|safe }}' || '[]');
+        var paths = JSON.parse('{{ path_coords|tojson|safe }}' || '[]');
 
-        // Create a layer group for the markers
+        // Tạo các layer group
         var nodeMarkers = L.layerGroup();
         var pathMarkers = L.layerGroup();
 
-        // Add all node markers to the layer group
+        // Thêm markers cho nodes
         nodes.forEach(function(coord) {
             var marker = L.circleMarker(coord, {
-                radius: 5,
-                color: 'blue',
-                fillColor: 'blue',
-                fillOpacity: 0.8
+                radius: 4, // Giảm kích thước node một chút cho tinh tế
+                color: '#007bff',
+                fillColor: '#007bff',
+                fillOpacity: 0.7
             });
             marker.addTo(nodeMarkers);
         });
+        nodeMarkers.addTo(map); // Mặc định hiển thị
 
-        // Add all paths to the layer group
+        // Thêm polylines cho paths
         paths.forEach(function(path) {
-            var polyline = L.polyline(path, { color: 'green', weight: 3 });
+            var polyline = L.polyline(path, { color: '#6c757d', weight: 2, opacity: 0.6 }); // Màu xám, mỏng hơn
             polyline.addTo(pathMarkers);
         });
+        pathMarkers.addTo(map); // Mặc định hiển thị
 
-        // Add toggle functionality for nodes
+        // Xử lý nút Toggle Nodes
         document.getElementById('toggleNodes').addEventListener('click', function() {
+            var btn = this;
             if (map.hasLayer(nodeMarkers)) {
                 map.removeLayer(nodeMarkers);
+                btn.classList.remove('active');
             } else {
                 map.addLayer(nodeMarkers);
+                btn.classList.add('active');
             }
         });
 
-        // Add toggle functionality for paths
+        // Xử lý nút Toggle Paths
         document.getElementById('togglePaths').addEventListener('click', function() {
+            var btn = this;
             if (map.hasLayer(pathMarkers)) {
                 map.removeLayer(pathMarkers);
+                btn.classList.remove('active');
             } else {
                 map.addLayer(pathMarkers);
+                btn.classList.add('active');
             }
         });
 
+        // Biến toàn cục cho tương tác trên bản đồ
         var click_coords = [];
-        var start_marker, end_marker, polyline;
+        var start_marker, end_marker, shortest_path_polyline; 
+        
+        // Cập nhật: Icon đẹp hơn cho Start/End - Dấu ghim tương tự Google Maps
         var startIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Hình ảnh điểm bắt đầu
-            iconSize: [30, 40],
-            iconAnchor: [15, 40],
-            popupAnchor: [0, -40]
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', // Dấu ghim màu xanh
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
         });
         var endIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Hình ảnh điểm kết thúc
-            iconSize: [30, 40],
-            iconAnchor: [15, 40],
-            popupAnchor: [0, -40]
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', // Dấu ghim màu đỏ
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
         });
+
 
         map.on('click', function(e) {
             if (click_coords.length >= 2) {
+                // Reset bản đồ
                 click_coords = [];
                 if (start_marker) map.removeLayer(start_marker);
                 if (end_marker) map.removeLayer(end_marker);
-                if (polyline) map.removeLayer(polyline);
+                if (shortest_path_polyline) map.removeLayer(shortest_path_polyline);
+                $('#distance-time-result').html("Chờ người dùng chọn điểm...");
             }
 
             var lat = e.latlng.lat;
@@ -198,14 +285,17 @@
             click_coords.push([lat, lng]);
 
             if (click_coords.length == 1) {
+                // Thêm điểm Bắt đầu
                 start_marker = L.marker([lat, lng], { icon: startIcon }).addTo(map).bindPopup("Start Point").openPopup();
             } else if (click_coords.length == 2) {
+                // Thêm điểm Kết thúc
                 end_marker = L.marker([lat, lng], { icon: endIcon }).addTo(map).bindPopup("End Point").openPopup();
 
-                // Get the selected algorithm from the dropdown list
+                // Lấy thuật toán
                 var algorithm = document.getElementById('algorithmSelect').value;
+                $('#distance-time-result').html("Đang tính toán đường đi...");
 
-                // Send coordinates and algorithm to the server to calculate the path
+                // 1. Tìm đường đi ngắn nhất
                 $.ajax({
                     url: "/find_shortest_path",
                     type: "POST",
@@ -214,40 +304,45 @@
                         start: click_coords[0],
                         end: click_coords[1],
                         algorithm: algorithm,
-                        max_depth: 0
+                        max_depth: 0 
                     }),
                     success: function(response) {
-                        // Draw the path on the map
+                        // Xóa đường cũ nếu có
+                        if (shortest_path_polyline) map.removeLayer(shortest_path_polyline);
+                        
+                        // Vẽ đường đi mới: Màu Đỏ đậm hơn, nét liền
                         var latlngs = response.path_coords;
-                        polyline = L.polyline(latlngs, { color: 'red', weight: 4 }).addTo(map);
-                        map.fitBounds(polyline.getBounds());
+                        shortest_path_polyline = L.polyline(latlngs, { color: 'red', weight: 5, opacity: 0.9 }).addTo(map);
+                        map.fitBounds(shortest_path_polyline.getBounds(), { padding: [50, 50] });
+
+                        // 2. Tính khoảng cách & thời gian (Chỉ gọi khi tìm được đường đi thành công)
+                        $.ajax({
+                            url: "/estimate_distance_time",
+                            type: "POST",
+                            contentType: "application/json",
+                            data: JSON.stringify({
+                                start: click_coords[0],
+                                end: click_coords[1],
+                                speed: 1.39 
+                            }),
+                            success: function(response) {
+                                var distance = response.distance_m ? response.distance_m.toFixed(1) : "N/A";
+                                var time = response.estimated_time_s ? (response.estimated_time_s/60).toFixed(1) : "N/A";
+                                
+                                $('#distance-time-result').html(
+                                    "<b>✨ Kết quả tính toán</b><br>" +
+                                    "<i class='fas fa-road'></i> <b>Khoảng cách:</b> " + distance + " m<br>" +
+                                    "<i class='fas fa-clock'></i> <b>Thời gian:</b> " + time + " phút (v=" + (1.39 * 3.6).toFixed(1) + " km/h)"
+                                );
+                            },
+                            error: function(error) {
+                                $('#distance-time-result').html("<b>⚠️ Lỗi:</b> Không thể tính khoảng cách/thời gian.");
+                            }
+                        });
                     },
                     error: function(error) {
                         console.error(error);
-                        alert("Error: " + error.responseJSON.error);
-                    }
-                });
-
-                // Gửi request tính khoảng cách & thời gian
-                $.ajax({
-                    url: "/estimate_distance_time",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({
-                        start: click_coords[0],
-                        end: click_coords[1],
-                        speed: 1.39 // m/s, bạn có thể cho người dùng nhập nếu muốn
-                    }),
-                    success: function(response) {
-                        var distance = response.distance_m.toFixed(1);
-                        var time = response.estimated_time_s ? (response.estimated_time_s/60).toFixed(1) : "N/A";
-                        $('#distance-time-result').html(
-                            "<b>Khoảng cách ước tính:</b> " + distance + " m<br>" +
-                            "<b>Thời gian dự kiến:</b> " + time + " phút"
-                        );
-                    },
-                    error: function(error) {
-                        $('#distance-time-result').html("Không thể tính khoảng cách/thời gian.");
+                        $('#distance-time-result').html("<b>⚠️ Lỗi:</b> Không tìm thấy đường đi (" + error.responseJSON.error + ")");
                     }
                 });
             }
